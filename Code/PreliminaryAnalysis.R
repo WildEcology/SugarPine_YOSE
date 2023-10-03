@@ -25,16 +25,17 @@ theme_set(
 
 librarian::shelf(tidyverse, readxl, viridis, patchwork)
 
+## unzipping files on your computer
 setwd("/Users/treelife/Documents/YOSE sugar pine project/Code and data/Analyses_sugarpine/Data/YPE_Data")
 files <- list.files()
 outdir <- "/Users/treelife/Documents/YOSE sugar pine project/Code and data/Analyses_sugarpine/Data/YPE_Data"
 
-# ## for loop to unzip files
+# ## for loop to unzip files on your computer
 # for (file in files) {
 #   unzip(paste0(outdir,"/", file))
 # }
 
-help(list.files)
+
 ## reading in all data
 folders <- list.dirs(outdir)[-c(1,4)]
 
@@ -96,41 +97,7 @@ numfig <- summarydat %>%
 
 numfig + perfig
 
-3/5
-
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#
-#
-#                                    Text
-#
-#
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-librarian::shelf(BiodiversityR, ggsci, readxl, tidyverse)
-data(warcom)
-str(warcom)
-data(warenv)
-summary(warenv)
-
-Accum.1 <- accumcomp(warcom, y=warenv, factor='population', 
-                     method='exact', conditioned=FALSE, plotit=FALSE)
-Accum.1
-
-
-accum.long1 <- accumcomp.long(Accum.1, ci=NA, label.freq=5)
-head(accum.long1)
-
-plotgg1 <- ggplot(data=accum.long1, aes(x = Sites, y = Richness, ymax = UPR, ymin = LWR)) + 
-  scale_x_continuous(expand=c(0, 1), sec.axis = dup_axis(labels=NULL, name=NULL)) +
-  scale_y_continuous(sec.axis = dup_axis(labels=NULL, name=NULL)) +
-  geom_line(aes(colour=Grouping), size=2) +
-  geom_point(data=subset(accum.long1, labelit==TRUE), 
-             aes(colour=Grouping, shape=Grouping), size=5) +
-  geom_ribbon(aes(colour=Grouping), alpha=0.2, show.legend=FALSE) + 
-  scale_colour_npg() +
-  labs(x = "Trees", y = "Loci", colour = "Population", shape = "Population")
 
 
 
-# % decline
-average
+
