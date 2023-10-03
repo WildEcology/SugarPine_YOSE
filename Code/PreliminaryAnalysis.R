@@ -22,7 +22,7 @@ theme_set(
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 )
 
-
+if (!require("librarian")) install.packages("librarian")
 librarian::shelf(tidyverse, readxl, viridis, patchwork)
 
 ## unzipping files on your computer
