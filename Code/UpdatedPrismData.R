@@ -1,6 +1,6 @@
 ## ---------------------------
 ##
-## Script name: 
+## Script name: Extracting prism data
 ##
 ## Author: Dr. Joan Dudney
 ##
@@ -21,9 +21,7 @@
 # Packages
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
 ## Install the librarian package if not yet installed using the Require package 
-
 #install.packages("Require")
 if (!require("librarian")) install.packages("librarian")
 librarian::shelf(tidyverse, curl, terra, tmap, sf, sp, tmaptools, rsconnect, data.table)
@@ -90,6 +88,7 @@ tm_shape(newprojpts)+
 
 plot(pila.shp)
 plot(newprojpts, add=TRUE, col="blue")
+
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Extracting prism data and writing to csv
