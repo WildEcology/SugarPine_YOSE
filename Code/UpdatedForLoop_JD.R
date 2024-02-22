@@ -5,6 +5,7 @@ folders <- list.dirs(outdir)[-c(1,4)]
 
 tree_list <- data.frame()
 
+#changed the for loop so that NA would not be attached to file name - it was getting an error 
 for (folder in folders) {
   newfiles = list.files(folder, pattern = "PILAdata")
   for(file in newfiles) {
