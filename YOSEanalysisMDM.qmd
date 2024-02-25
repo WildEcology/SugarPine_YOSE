@@ -1,0 +1,339 @@
+---
+title: "YOSE Analysis"
+author: "Michelle D. Mohr"
+format: 
+  html: 
+    code-fold: show
+    toc: true
+    number-sections: true
+    embed-resources: true
+execute:
+  echo: true
+  message: false
+  warning: false
+editor: visual
+---
+
+### Objectives:
+
+**Plot and Tree level incidence**
+
+-   number of plots with WPBR/total number of plots
+-   number of trees with WBPR/total number of trees
+
+**Proportion infected graph by size class**
+
+-   number of total individuals infected throughout the plots by DBH size class
+
+**Incidence by Tree density**
+
+-   density = number of stems/area
+    -   incidence y axis
+    -   tree density x axis
+-   two separate graphs (one PILA and one Associated and PILA)
+
+**Climate Graphs**
+
+-   climate provided by GPS locations
+    -   incidence y axis
+    -   temperature/precipitation x axis
+
+Packages
+
+```{r}
+library(tidyverse)
+library(here)
+library(librarian)
+
+```
+
+Data
+
+```{r PILA data}
+#Joan's code chunk part 1
+
+theme_set(
+  theme_bw(base_size = 17)+
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+)
+
+if (!require("librarian")) install.packages("librarian")
+librarian::shelf(tidyverse, readxl, viridis, patchwork)
+
+#Michelle set working directory
+setwd("/Users/michellemohr/Desktop/SugarPine_YOSE")
+files <- list.files()
+outdir <- "/Users/michellemohr/Desktop/SugarPine_YOSE"
+
+# ## for loop to unzip files on your computer
+# for (file in files) {
+#   unzip(paste0(outdir,"/", file))
+# }
+
+## reading in all data
+folders <- list.dirs(outdir)[-c(1,4)]
+
+tree_list <- data.frame()
+
+for (folder in folders) {
+  newfiles = list.files(folder, pattern = "PILAdata")
+  for(file in newfiles) {
+    xlsfile <- read_excel(paste0(folder,"/",file), na = "NA") %>%
+      mutate_if(is.numeric, as.numeric) %>% 
+      dplyr::select(plotID, treeNum,DBH_cm, pitchTubes, exitHoles, activeBranchCanker, inactiveBranchCanker, 
+                    activeBoleCanker, inactiveBoleCanker, notes, plot_elevation_ft, trans_length, width)
+    tree_list <- rbind(tree_list, xlsfile)
+  }
+}
+
+#to rename the plot #s 
+
+tree_list <- tree_list %>%
+  mutate(plot_num = dense_rank(plotID))
+
+tree_list <- tree_list[!is.na(tree_list$plotID), ]
+
+# to create an infected column
+
+tree_list$infected <- ifelse(tree_list$activeBoleCanker > 0 | tree_list$activeBranchCanker > 0 | tree_list$inactiveBoleCanker > 0 | tree_list$inactiveBranchCanker > 0, 1, 0)
+
+tree_list$total_trees <- nrow(tree_list)
+
+#to bring in associated trees data
+folders <- list.dirs(outdir)[-c(1,4)]
+
+assoc_list <- data.frame()
+
+for (folder in folders) {
+  newfiles = list.files(folder, pattern = "YPE_Treedata")
+  for(file in newfiles) {
+    xlsfile <- read_excel(paste0(folder,"/",file), na = "NA") %>%
+      mutate_if(is.numeric, as.numeric) %>% 
+      dplyr::select(plot, treeNum, DBH_cm, height_m, species, notes)
+    assoc_list <- rbind(assoc_list, xlsfile)
+  }
+}
+```
+
+
+
+## Plot and Tree Level Incidence
+
+**Plot and Tree level incidence**
+
+-   number of plots with WPBR/total number of plots
+-   number of trees with WBPR/total number of trees
+
+**Psuedocode: Plot level**
+
+-   take each plot with a confirmed WPBR (using active/inactive Branch Canker and active/inactive Bole Canker)
+-   total up number of plots with confirmed WPBR and divide it by total number of plots
+
+### Plot level incidence
+
+```{r plot level incidence}
+wpbr_plots <- tree_list %>%
+  group_by(plot_num) %>%
+  summarise(totalinfected = sum(infected))
+ 
+
+
+plotlevel_incidence <- ggplot(data = wpbr_plots, aes(x = plot_num, y = totalinfected)) +
+                        geom_col() +
+                        labs(x = "Plot Number", y = "Total Infections", title = "Plot-Level Incidence of WPBR") +
+  theme_bw()
+
+plotlevel_incidence
+
+plotlevel_incidence +
+  scale_x_continuous(breaks = unique(wpbr_plots$plot_num[seq(1, length(unique(wpbr_plots$plot_num)), by = 1)]))
+
+
+##############################
+# How many plots had WPBR
+
+plots_with_wpbr <- wpbr_plots %>%
+  filter(totalinfected > 0) %>%
+  distinct(plot_num)
+
+# Count the number of unique plot numbers with WPBR
+num_plots_with_wpbr <- nrow(plots_with_wpbr)
+
+# Print the number of plots with WPBR
+print(num_plots_with_wpbr)
+  
+
+#######
+plots_with_wpbr <- sum(wpbr_plots$totalinfected > 0)
+plots_without_wpbr <- nrow(wpbr_plots) - plots_with_wpbr
+total_plots <- nrow(wpbr_plots)
+
+# Create a dataframe for plotting
+plot_data <- data.frame(
+  wpbr_status = c("With WPBR", "Without WPBR"),
+  num_plots = c(plots_with_wpbr, plots_without_wpbr),
+  total_plots = total_plots)
+
+```
+
+**Psuedocode: Tree level**
+
+-   take each tree with a confirmed WPBR (using active/inactive Branch Canker and active/inactive Bole Canker)
+-   total up number of tree with confirmed WPBR and divide it by total number of PILA trees in the study
+
+### Tree level incidence
+
+```{r tree level incidence}
+
+wbpr_trees <- tree_list %>%
+  group_by(infected) %>%
+  summarise(total_infected_trees = n())
+
+
+ggplot(wbpr_trees, aes(x = factor(infected), y = total_infected_trees, fill = factor(infected))) +
+  geom_bar(stat = "identity") +
+  labs(x = "Infected", y = "Total Trees", fill = "Infected Status") +
+  ggtitle("Total Infected and Non-Infected Trees")
+
+wbpr_trees$infected <- factor(wbpr_trees$infected, levels = c(0, 1), labels = c("Not Infected", "Infected"))
+
+# Create a simple bar graph with reordered x-axis
+trees_infected_plot <- ggplot(wbpr_trees, aes(x = infected, y = total_infected_trees, fill = infected)) +
+  geom_bar(stat = "identity") +
+  scale_x_discrete(drop = FALSE) +  # Prevents dropping unused levels
+  labs(x = "Infection Status", y = "Total Trees", fill = "Infection Status") +
+  ggtitle("Total Infected and Non-Infected Trees")
+
+trees_infected_plot
+
+```
+
+## Proportion Infected
+
+**Proportion infected graph by size class**
+
+-   number of total individuals infected throughout the plots by DBH size class
+
+```{r, fig.width=15, fig.height=8}
+# infected individuals 
+# DBH size classes (0-10, 10-20, etc.)
+
+# columns are infected and DBH_cm, create a new size class column 
+
+prop_infected <- tree_list %>%
+  select(DBH_cm, infected)
+
+
+# Define breaks and labels for size classes
+breaks <- c(seq(0, 230, by = 10), Inf)
+labels <- c(paste0(seq(0, 220, by = 10), "-", seq(10, 230, by = 10)), ">230")
+
+# Create a new column size_class based on DBH_cm values
+prop_infected$size_class <- cut(prop_infected$DBH_cm, breaks = breaks, labels = labels)
+prop_infected <- na.omit(prop_infected)
+
+# Plot the sizeclass population data
+sizeclass_pop <- ggplot(prop_infected, aes(x = size_class)) +
+  geom_bar(fill = "skyblue") +
+  labs(x = "Size Class", y = "Count", title = "Size Class Distribution") +
+  theme_minimal()
+
+sizeclass_pop
+
+# Plot the infected sizeclass data
+sizeclass_infected <- ggplot(prop_infected, aes(x = size_class, y = infected)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(x = "Size Class", y = "Infected", title = "Infected Trees by Size Class") +
+  theme_minimal()
+
+sizeclass_infected
+```
+
+## Incidence by Tree Density
+
+**Incidence by Tree density**
+
+-   density = number of stems/area
+    -   incidence y axis
+    -   tree density x axis
+-   two separate graphs (one PILA and one Associated)
+
+```{r PILA incidence}
+#create a new column called area which takes the trans_length column and multiplies it by width column 
+tree_list$width <- ifelse(is.na(tree_list$width), 40, tree_list$width)
+tree_list$width2 <- tree_list$width * 2
+tree_list$area <- tree_list$trans_length * tree_list$width2
+
+tree_list <- tree_list %>%
+  group_by(plot_num) %>%
+  mutate(trees_plot = n()) %>%
+  ungroup()
+
+tree_list$PILAdensity <- tree_list$trees_plot / tree_list$area
+
+infected_by_plot <- tree_list %>%
+  group_by(plot_num) %>%
+  summarise(infection_plot = sum(infected))
+
+# Merge the infected_by_plot dataframe with tree_list
+tree_list <- merge(tree_list, infected_by_plot, by = "plot_num", all.x = TRUE)
+
+#create incidence percentage
+
+tree_list$incidence <- (tree_list$infection_plot / tree_list$trees_plot) * 100
+
+PILAincidencepercent <- ggplot(tree_list, aes(x = PILAdensity, y = incidence)) +
+  geom_point(color = "blue") +
+  labs(x = "PILA Density", y = "Incidence %", title = "PILA Density vs. Incidence") +
+  theme_minimal() +
+  geom_smooth(method = "lm")
+
+PILAincidencepercent
+
+```
+
+```{r Associate Incidence}
+assoc_list <- assoc_list %>%
+  mutate(plot_num = dense_rank(plot))
+
+assoc_list <- assoc_list %>%
+  group_by(plot_num) %>%
+  mutate(total_PandA_trees_plot = n()) %>%
+  ungroup()
+
+mergedtrees_df <- merge(tree_list, assoc_list, by = "plot_num")
+
+mergedtrees_df$treedensity <- mergedtrees_df$total_PandA_trees_plot / mergedtrees_df$area
+
+ggplot(mergedtrees_df, aes(x = treedensity, y = infection_plot)) +
+  geom_point(color = "blue") +
+  labs(x = "Tree Density", y = "Incidence", title = "Tree Density vs. Incidence") +
+  theme_minimal() +
+  geom_smooth(method = "lm")
+
+Associateincidencepercent <- ggplot(mergedtrees_df, aes(x = treedensity, y = incidence)) +
+  geom_point(color = "blue") +
+  labs(x = "Tree Density", y = "Incidence %", title = "Tree Density vs. Incidence") +
+  theme_minimal() +
+  geom_smooth(method = "lm")
+
+library(cowplot)
+
+# Assuming plot1 and plot2 are your individual ggplot objects
+
+# Combine the two plots into a single plot grid
+combined_tree_incidence_plot <- plot_grid(PILAincidencepercent, Associateincidencepercent, labels = c("A", "B"), ncol = 2)
+
+# Print the combined plot
+print(combined_tree_incidence_plot)
+
+```
+
+## Climate Graphs
+
+**Climate Graphs**
+
+-   climate provided by GPS locations
+    -   incidence y axis
+    -   temperature/precipitation x axis
+    
