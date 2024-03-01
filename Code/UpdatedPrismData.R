@@ -58,15 +58,31 @@ hist(precip_prism)
 precip_prism_proj <- project(precip_prism, prjcrs)
 
 ## Reading in Yosemite plots
-plotutms <- read_csv("Data/PlotUTMs.csv")
+plotutms <- read_csv("Data/Plot_UTMsno0.csv") %>% 
+  na.omit()
+plotutms$newPlotID = 1:length(plotutms$plotID)
 
-points <- plotutms[c(2,3)] %>% 
+
+points10 <- plotutms %>% 
+  select(UTM_zone, plot_beg_UTM_N, plot_beg_UTM_E) %>%
+  filter(UTM_zone==10) %>% 
   rename(y = plot_beg_UTM_N , x = plot_beg_UTM_E) %>% 
+  select(x,y) %>% 
   as.matrix
 
-projpoints <- vect(points, crs="+proj=utm +zone=11 +datum=NAD83  +units=m")
+points11 <- plotutms %>% 
+  select(UTM_zone, plot_beg_UTM_N, plot_beg_UTM_E) %>%
+  filter(UTM_zone==11) %>% 
+  rename(y = plot_beg_UTM_N , x = plot_beg_UTM_E) %>% 
+  select(x,y) %>% 
+  as.matrix
 
-rightpts <- project(projpoints, prjcrs)
+projpoints10 <- vect(points10, crs="+proj=utm +zone=10 +datum=NAD83  +units=m")
+rightpts10 <- project(projpoints10, prjcrs)
+
+projpoints11 <- vect(points11, crs="+proj=utm +zone=11 +datum=NAD83  +units=m")
+rightpts11 <- project(projpoints11, prjcrs)
+
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Plotting data
@@ -77,26 +93,34 @@ rightpts <- project(projpoints, prjcrs)
 ## why is there a zero plot ID?
 
 ## converting to sf to be able to use tmap
-newprojpts <- sf::st_as_sf(rightpts)
-newprojpts$plotid = as.character(plotutms$plotID)
+newprojpts <- sf::st_as_sf(rightpts11)
+newprojpts10 <- sf::st_as_sf(rightpts10)
+#newprojpts$plotid = as.character(plotutms$plotID)
 
 tmap_mode("view")
 
 tm_shape(newprojpts)+
-  tm_dots("plotid")+
-  tm_layout(legend.outside = T)
+  tm_dots()+
+  tm_layout(legend.outside = T)+
+  tm_shape(newprojpts10, col="blue")+
+  tm_dots(col="blue")
 
-plot(pila.shp)
-plot(newprojpts, add=TRUE, col="blue")
 
+plot(newprojpts, col="blue")
+plot(newprojpts10, add=T, col="green")
+plot(pila.shp, add=T)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Extracting prism data and writing to csv
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+exts.poly <- do.call(rbind, list(rightpts10, rightpts11))
+#writeVector(exts.poly, "Data/projectedPILAplots.shp")
 
 ## extracting prism data for each plot
-plotprism <- terra::extract(c(vpd_prism_proj,temp_prism_proj,precip_prism_proj), rightpts)
-colnames(plotprism) <- c("PlotID", 'vpdmax','tmean','ppt') 
+plotprism <- terra::extract(c(vpd_prism_proj,temp_prism_proj,precip_prism_proj), exts.poly)
+colnames(plotprism) <- c("seqPlotID", 'vpdmax','tmean','ppt') 
+plotprism$PlotID = plotutms$plotID
+
 
 write_csv(plotprism, "Data/updatedPRISMdata.csv")
-
+hist(plotprism$tmean)
