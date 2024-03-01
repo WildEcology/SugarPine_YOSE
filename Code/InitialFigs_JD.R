@@ -19,16 +19,24 @@
 library(tidyverse)
 
 dat <- read_csv("Data/tree_list_climatedata.csv")
+
+# data viz
 hist(dat$DBH_cm)
 max(dat$DBH_cm)
+
+## classify size class
 size_class <- dat %>% 
   mutate(sizeclass = ifelse(DBH_cm <= 5, "0-5",
                             ifelse(DBH_cm > 5 & DBH_cm <=  10, "5.1-10",
                                    ifelse(DBH_cm > 10.1 & DBH_cm <= 30, "10.1-30",
                                           ifelse(DBH_cm > 30 & DBH_cm <= 60, "30.1-60",
                                                  ifelse(DBH_cm > 60 & DBH_cm <= 90, "60.1-90", "90.1-226"))))))
+plotcheck <- size_class %>% 
+  mutate(uniquetreeid = 1:length(treeNum)) %>% 
+  group_by(sizeclass, plotID) %>% 
+  summarize(inf = sum(infected), totaltrees = length(uniquetreeid))
 
-
+## first two figs
 totalinf <- size_class %>% 
   ggplot(aes(x = sizeclass, y = infected, fill = "sizeclass"))+
   geom_col(width = .8)+
@@ -38,6 +46,8 @@ totalinf <- size_class %>%
   ylab("# WPBR infections")+
   guides(fill=F)+
   ylim(0,11)
+
+totalinf
 
 perinf <- size_class %>% 
   mutate(uniquetreeid = 1:length(treeNum)) %>% 
