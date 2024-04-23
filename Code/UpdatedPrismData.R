@@ -44,8 +44,10 @@ vpd <- "Data/Prism/PRISM_vpdmax/PRISM_vpdmax_30yr_normal_800mM4_annual_bil.bil"
 temp <-"Data/Prism/prism_tmean/PRISM_tmean_30yr_normal_800mM3_annual_bil.bil"
 precip <- "Data/Prism/prism_ppt/PRISM_ppt_30yr_normal_800mM3_annual_bil.bil"
 
+
 ## reading in prism data and reprojecting to proj crs
 vpd_prism <- rast(vpd)
+plot(vpd_prism)
 hist(vpd_prism)
 vpd_prism_proj <- project(vpd_prism, prjcrs)
 
@@ -58,21 +60,21 @@ hist(precip_prism)
 precip_prism_proj <- project(precip_prism, prjcrs)
 
 ## Reading in Yosemite plots
-plotutms <- read_csv("Data/Plot_UTMsno0.csv") %>% 
-  na.omit()
+plotutms <- read_csv("Data/PlotUTMsYOSE_SEKI.csv")
+
 plotutms$newPlotID = 1:length(plotutms$plotID)
 
 
 points10 <- plotutms %>% 
-  select(UTM_zone, plot_beg_UTM_N, plot_beg_UTM_E) %>%
-  filter(UTM_zone==10) %>% 
+  select(zone, plot_beg_UTM_N, plot_beg_UTM_E) %>%
+  filter(zone==10) %>% 
   rename(y = plot_beg_UTM_N , x = plot_beg_UTM_E) %>% 
   select(x,y) %>% 
   as.matrix
 
 points11 <- plotutms %>% 
-  select(UTM_zone, plot_beg_UTM_N, plot_beg_UTM_E) %>%
-  filter(UTM_zone==11) %>% 
+  select(zone, plot_beg_UTM_N, plot_beg_UTM_E) %>%
+  filter(zone==11) %>% 
   rename(y = plot_beg_UTM_N , x = plot_beg_UTM_E) %>% 
   select(x,y) %>% 
   as.matrix
@@ -122,5 +124,5 @@ colnames(plotprism) <- c("seqPlotID", 'vpdmax','tmean','ppt')
 plotprism$PlotID = plotutms$plotID
 
 
-write_csv(plotprism, "Data/updatedPRISMdata.csv")
-hist(plotprism$tmean)
+write_csv(plotprism, "Data/PRISMdataSEKI_YOSE.csv")
+hist(plotprism$ppt)

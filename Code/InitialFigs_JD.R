@@ -64,5 +64,23 @@ perinf <- size_class %>%
 
 perinf
 
+##==============================================================================================
+##       Recruitment               
+##==============================================================================================
 
+rec <- size_class %>% 
+  mutate(rec = ifelse(DBH_cm>5, 0, 1)) %>% 
+  group_by(plot_num, tmean, vpdmax, ppt) %>% 
+  summarize(density = as.numeric(paste(unique(PILAdensity))), rec = sum(rec))
 
+rec %>% 
+  ggplot(aes(y=rec, x=tmean))+
+  geom_point()+
+  geom_smooth(method="lm") +
+  xlab("Mean temperature (°C)")+
+  ylab("Recruitment/plot")
+
+mean(rec$rec)/20
+
+size_class %>% 
+  ggplot()

@@ -56,9 +56,9 @@ theme_set(
 ## creating a for loop that reads in each unzipped tif file as a raster stack
 
 ## this for loop lists all the files to read in
-setwd("/Users/treelife/Documents/YOSE sugar pine project/Code and data/Analyses_sugarpine/Data/US fire history/Fire severity")
+setwd("/Users/treelife/Documents/Sierra Projects/Yosemite Projects/YOSE sugar pine project/Code and data/Analyses_sugarpine/SugarPineProj/Data/US fire history/Fire severity")
 wdir <- getwd()
-folderlist <- list.files()
+folderlist <- list.files()[-c(39:44)]
 
 newdataframe <-  list()
 
@@ -72,7 +72,8 @@ files <- as.vector(newdataframe)
 
 
 ## now reading in and stacking raster files
-yose_pila <- "/Users/treelife/Documents/YOSE sugar pine project/Code and data/Analyses_sugarpine/Data/YOSE_PILA_Dist/YOSE_SugarPine_Dist_20210324.shp"
+setwd("/Users/treelife/Documents/Sierra Projects/Yosemite Projects/YOSE sugar pine project/Code and data/Analyses_sugarpine/SugarPineProj/")
+yose_pila <- "Data/YOSE_PILA_Dist/YOSE_SugarPine_Dist_20210324.shp"
 pila.shp <- vect(yose_pila)
 proj = crs(pila.shp)
 
@@ -91,15 +92,27 @@ newdata <- newdataframe %>%
 proj1 = crs(rast2010)
 plot(rast2010)
 
+caplot <- vect("Data/CA/california2016.shp")
+caplot
+projcaplot <- project(caplot, proj1)
 
-rast2013 <- rast("/Users/treelife/Documents/YOSE sugar pine project/Code and data/Analyses_sugarpine/Data/US fire history/Fire severity/2013/mtbs_CA_2013.tif")
+rast2013 <- rast("Data/US fire history/Fire severity/2013/mtbs_CA_2013.tif")
 plot(rast2013)
 proj1 = crs(rast2013)
 
 
 projpila <- project(pila.shp, proj1)
 plot(projpila)
-extent <- ext(-2072370, -2000723, 1854591, 1933098)
+
+#extent <- ext(-2072370, -2000723, 1854591, 1933098)
+plot(extent)
+plot(projpila, add=T)
+
+rightptsyose <- project(projpoints11, proj1)
+plot(projcaplot)
+plot(rightptsyose, add=T)
+
+extent <- ext(-2356114, -1646840, 1243190, 2452711)
 
 newdata <- newdataframe %>% 
   #filter(row_number()%in%c(27:30)) %>% 
@@ -111,19 +124,25 @@ for (i in seq(1:length(newdata))){
     file <- newdata[i]
     raster1 <- rast(file)
     croprast <- crop(raster1, extent)
-    maskpila <- mask(croprast, projpila)
-    resampila <- resample(maskpila, croprast)
-    raster_list[i] <- resampila
+    maskca <- mask(croprast, projcaplot)
+    resampca <- resample(maskca, croprast)
+    raster_list[i] <- resampca
   }
 
 ## for some reason the 10th element has a different extent and not much data so removing it
-raster_list_filter <- raster_list[-10]
+# raster_list_filter <- raster_list[-10]
+# rasterbrick <- terra::rast(raster_list_filter)
+# rasterbrick[[5]]
+# 
+# plot(raster_list_filter[[29]])
+# rasterbrick[1]
+
+raster_list_filter <- raster_list[-9]
 rasterbrick <- terra::rast(raster_list_filter)
 rasterbrick[[5]]
 
 plot(raster_list_filter[[29]])
 rasterbrick[1]
-
 
 
 
