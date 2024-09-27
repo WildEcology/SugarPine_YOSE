@@ -11,10 +11,24 @@
 ##
 ## ---------------------------
 ##
-## Notes:
-##   
-##
+## Notes:This code randomly selects 
+## plots using a random stratified sampling design 
+## in the rim fire
 ## ---------------------------
+
+#install.packages("Require")
+if (!require("librarian")) install.packages("librarian")
+
+## this code will load package or download packages that are not yet loaded 
+librarian::shelf(tidyverse, curl, terra, tmap, sf, sgsR, tmaptools,tmap, rsconnect)
+
+## ggplot theme
+theme_set(
+  theme_bw(base_size = 17)+
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+)
+
+
 yose_pila <- "/Users/treelife/Documents/YOSE sugar pine project/Code and data/Analyses_sugarpine/Data/YOSE_PILA_Dist/YOSE_SugarPine_Dist_20210324.shp"
 pila.shp <- vect(yose_pila)
 plot(pila.shp)
